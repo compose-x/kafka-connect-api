@@ -12,6 +12,7 @@ license = "MPL-2.0"
 [tool.poetry.dependencies]
 python = "^3.8"
 requests = "^2.26.0"
+jsonschema = "^4.2.1"
 
 [tool.poetry.dev-dependencies]
 isort = "^5.10.1"
@@ -27,6 +28,10 @@ Sphinx = "^4.3.0"
 tox = "^3.24.4"
 tbump = "6.5.0"
 sphinx-jsonschema = "^1.17.1"
+cleanpy = "^0.3.1"
+
+[tool.poetry.extras]
+awslambda = ["jsonschema"]
 
 
 [tool.tbump]

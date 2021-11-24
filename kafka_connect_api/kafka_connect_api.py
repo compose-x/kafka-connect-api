@@ -35,6 +35,15 @@ class Task(object):
         )
         return _query
 
+    @property
+    def state(self):
+        return self.status["state"]
+
+    def is_running(self):
+        if self.status == "RUNNING":
+            return True
+        return False
+
     def restart(self):
         _query = self._api.post_raw(
             f"/connectors/{self._connector.name}/tasks/{self.id}/restart"

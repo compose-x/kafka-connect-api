@@ -1,0 +1,314 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Kafka Connect API Layer and Functions to manipulate Kafka Connect connectors
+Transform:
+  - AWS::Serverless-2016-10-31
+
+Parameters:
+  PermissionsBoundary:
+    Type: String
+    Default: none
+    Description: IAM Policy ARN to use for PermissionsBoundary if required. Optional.
+
+  LambdaLayerVersionArn:
+    Type: String
+    Default: none
+    Description: Whether you want to use a different lambda layer for the Functions. Optional. Not recommended.
+
+  CreateCreateUpdateConnectorFunction:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+
+  CreateDeleteConnectorFunction:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+
+  CreateRestartConnectorsFunction:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+
+  UseVpc:
+    Type: String
+    Description: Whether or not to use the above VPC Settings.
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
+
+Conditions:
+  PermissionsBoundaryCon: !Not [ !Equals [ !Ref PermissionsBoundary, "none" ] ]
+  OverrideLayerVersion: !Not [ !Equals [ !Ref LambdaLayerVersionArn, "none" ] ]
+  UseVpcCon: !Equals [!Ref UseVpc, "true" ]
+  CreateCreateUpdateFunctionCon: !Equals [!Ref CreateCreateUpdateConnectorFunction, "true" ]
+  CreateDeleteFunctionCon: !Equals [!Ref CreateDeleteConnectorFunction, "true" ]
+  CreateRestartConnectorsFunctionCon:  !Equals [!Ref CreateRestartConnectorsFunction, "true" ]
+
+Resources:
+
+  KafkaConnectApiLayer:
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      CompatibleArchitectures: [x86_64, arm64]
+      CompatibleRuntimes: [python3.8, python3.9]
+      ContentUri: ./layer.zip
+      Description: Kafka Connect API Layer
+      LayerName: kafka-connect-api
+      LicenseInfo: MPL-2.0
+      RetentionPolicy: Retain
+
+
+  FunctionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Ref AWS::StackName
+      GroupDescription: !Sub 'kafka-connect-api-lambdas-${AWS::StackName}'
+      VpcId: !Ref VpcId
+
+  ## Create Connectors function
+
+  CreateFunctionRole:
+    Condition: CreateCreateUpdateFunctionCon
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - !If
+          - UseVpcCon
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Condition:
+              Bool:
+                aws:SecureTransport: 'true'
+            Effect: Allow
+            Principal:
+              Service:
+                - !Sub 'lambda.${AWS::URLSuffix}'
+        Version: '2012-10-17'
+      Description: !Sub 'CreateFunctionRole-${AWS::StackName}'
+      PermissionsBoundary: !If
+        - PermissionsBoundaryCon
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+
+
+  CreateFunction:
+    Condition: CreateCreateUpdateFunctionCon
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: kafka-connect-api--CreateConnector
+      Runtime: python3.8
+      InlineCode: |
+        #!/usr/bin/env python
+        from kafka_connect_api.aws_lambdas import create_update_connector as handler
+
+        def lambda_handler(event, context):
+            return handler(event, context)
+
+      Handler: index.lambda_handler
+      Layers:
+        - Fn::If:
+            - OverrideLayerVersion
+            - !Ref LambdaLayerVersionArn
+            - !Ref KafkaConnectApiLayer
+      VpcConfig: !If
+        - UseVpcCon
+        - SubnetIds: !Ref Subnets
+          SecurityGroupIds:
+            - !GetAtt FunctionSecurityGroup.GroupId
+        - !Ref AWS::NoValue
+      Timeout: 30
+      Role: !GetAtt CreateFunctionRole.Arn
+
+  ## Create Connectors function
+
+  DeleteFunctionRole:
+    Condition: CreateDeleteFunctionCon
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - !If
+          - UseVpcCon
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Condition:
+              Bool:
+                aws:SecureTransport: 'true'
+            Effect: Allow
+            Principal:
+              Service:
+                - !Sub 'lambda.${AWS::URLSuffix}'
+        Version: '2012-10-17'
+      Description: !Sub 'DeleteFunctionRole-${AWS::StackName}'
+      PermissionsBoundary: !If
+        - PermissionsBoundaryCon
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+
+
+  DeleteFunction:
+    Condition: CreateDeleteFunctionCon
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: kafka-connect-api--DeleteConnector
+      Runtime: python3.8
+      InlineCode: |
+        #!/usr/bin/env python
+        from kafka_connect_api.aws_lambdas import delete_connector as handler
+
+        def lambda_handler(event, context):
+            return handler(event, context)
+
+      Handler: index.lambda_handler
+      Layers:
+        - Fn::If:
+            - OverrideLayerVersion
+            - !Ref LambdaLayerVersionArn
+            - !Ref KafkaConnectApiLayer
+      VpcConfig: !If
+        - UseVpcCon
+        - SubnetIds: !Ref Subnets
+          SecurityGroupIds:
+            - !GetAtt FunctionSecurityGroup.GroupId
+        - !Ref AWS::NoValue
+      Timeout: 30
+      Role: !GetAtt DeleteFunctionRole.Arn
+
+
+  ## Restart Connector function
+
+  RestartFunctionRole:
+    Condition: CreateRestartConnectorsFunctionCon
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - !If
+          - UseVpcCon
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Condition:
+              Bool:
+                aws:SecureTransport: 'true'
+            Effect: Allow
+            Principal:
+              Service:
+                - !Sub 'lambda.${AWS::URLSuffix}'
+        Version: '2012-10-17'
+      Description: !Sub 'RestartFunctionRole-${AWS::StackName}'
+      PermissionsBoundary: !If
+        - PermissionsBoundaryCon
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+
+
+  RestartFunction:
+    Condition: CreateRestartConnectorsFunctionCon
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: kafka-connect-api--RestartConnector
+      Runtime: python3.8
+      InlineCode: |
+        #!/usr/bin/env python
+        from kafka_connect_api.aws_lambdas import restart_connector as handler
+
+        def lambda_handler(event, context):
+            return handler(event, context)
+
+      Handler: index.lambda_handler
+      Layers:
+        - Fn::If:
+            - OverrideLayerVersion
+            - !Ref LambdaLayerVersionArn
+            - !Ref KafkaConnectApiLayer
+      VpcConfig: !If
+        - UseVpcCon
+        - SubnetIds: !Ref Subnets
+          SecurityGroupIds:
+            - !GetAtt FunctionSecurityGroup.GroupId
+        - !Ref AWS::NoValue
+      Timeout: 30
+      Role: !GetAtt RestartFunctionRole.Arn
+
+
+  ## HealthCheck Connector function
+
+  HealthCheckFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - !If
+          - UseVpcCon
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Condition:
+              Bool:
+                aws:SecureTransport: 'true'
+            Effect: Allow
+            Principal:
+              Service:
+                - !Sub 'lambda.${AWS::URLSuffix}'
+        Version: '2012-10-17'
+      Description: !Sub 'HealthCheckFunctionRole-${AWS::StackName}'
+      PermissionsBoundary: !If
+        - PermissionsBoundaryCon
+        - !Ref PermissionsBoundary
+        - !Ref AWS::NoValue
+
+
+  HealthCheckFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: kafka-connect-api--HealthCheckConnector
+      Runtime: python3.8
+      InlineCode: |
+        #!/usr/bin/env python
+        from kafka_connect_api.aws_lambdas import restart_connector as handler
+
+        def lambda_handler(event, context):
+            return handler(event, context)
+
+      Handler: index.lambda_handler
+      Layers:
+        - Fn::If:
+            - OverrideLayerVersion
+            - !Ref LambdaLayerVersionArn
+            - !Ref KafkaConnectApiLayer
+      VpcConfig: !If
+        - UseVpcCon
+        - SubnetIds: !Ref Subnets
+          SecurityGroupIds:
+            - !GetAtt FunctionSecurityGroup.GroupId
+        - !Ref AWS::NoValue
+      Timeout: 30
+      Role: !GetAtt HealthCheckFunctionRole.Arn
