@@ -20,21 +20,24 @@ class Task(object):
         :param Connector connector:
         :param int task_id:
         """
-        self.task_id = task_id
+        self.id = task_id
         self._connector = connector
         self._api = api
         self.config = task_config
 
+    def __repr__(self):
+        return f"{self._connector.name}.{self.id}"
+
     @property
     def status(self):
         _query = self._api.get(
-            f"/connectors/{self._connector.name}/tasks/{self.task_id}/status"
+            f"/connectors/{self._connector.name}/tasks/{self.id}/status"
         )
         return _query
 
     def restart(self):
-        _query = self._api.post(
-            f"/connectors/{self._connector.name}/tasks/{self.task_id}/restart"
+        _query = self._api.post_raw(
+            f"/connectors/{self._connector.name}/tasks/{self.id}/restart"
         )
 
 
@@ -52,22 +55,40 @@ class Connector(object):
         """
         self._api = api
         self.name = name
-        if self.exists():
-            self.config()
+
+    def __repr__(self):
+        return self.name
 
     def exists(self):
         req = self._api.get_raw(f"/connectors/{self.name}/")
         if req.status_code == 404:
             return False
+        return True
 
     def restart(self):
         self._api.post(f"/connectors/{self.name}/restart")
 
     def pause(self):
-        self._api.put(f"/connectors/{self.name}/pause")
+        self._api.put_raw(f"/connectors/{self.name}/pause")
 
     def resume(self):
-        self._api.put(f"/connectors/{self.name}/resume")
+        self._api.put_raw(f"/connectors/{self.name}/resume")
+
+    def restart_all_tasks(self):
+        for _task in self.tasks:
+            _task.restart()
+
+    def delete(self):
+        self._api.delete_raw(f"/connectors/{self.name}")
+
+    def cycle_connector(self):
+        self.pause()
+        self.restart_all_tasks()
+        self.resume()
+
+    @property
+    def state(self):
+        return self.status()["connector"]["state"]
 
     @property
     def config(self):
@@ -106,12 +127,23 @@ class Cluster(object):
         return self._api.get("/")
 
     @property
+    def version(self):
+        return self.get()["version"]
+
+    @property
+    def kafka_cluster(self):
+        return self.get()["kafka_cluster_id"]
+
+    @property
     def connectors(self):
         _connectors = self._api.get("/connectors")
         _cluster_connectors = {}
         for connector in _connectors:
             _cluster_connectors[connector] = Connector(self._api, connector)
         return _cluster_connectors
+
+    def __repr__(self):
+        return f"{self._api.url} - {self.version} - {self.kafka_cluster}"
 
 
 class Api(object):
@@ -167,48 +199,55 @@ class Api(object):
         )
 
         self.headers = {
-            "Content-type": "content_type_value",
+            "Content-type": "application/json",
             "Accept": "application/json",
         }
 
-    def get_raw(self, query_path):
+    def __repr__(self):
+        return self.url
+
+    def get_raw(self, query_path, **kwargs):
         if not query_path.startswith(r"/"):
             query_path = f"/{query_path}"
         url = f"{self.url}{query_path}"
-        req = requests.get(url, auth=self.auth, headers=self.headers)
+        req = requests.get(url, auth=self.auth, headers=self.headers, **kwargs)
         return req
 
     def get(self, query_path):
         req = self.get_raw(query_path)
         return req.json()
 
-    def post_raw(self, query_path, data=None):
+    def post_raw(self, query_path, data=None, **kwargs):
         if not query_path.startswith(r"/"):
             query_path = f"/{query_path}"
         url = f"{self.url}{query_path}"
-        req = requests.post(url, auth=self.auth, headers=self.headers, data=data)
+        req = requests.post(
+            url, auth=self.auth, headers=self.headers, data=data, **kwargs
+        )
         return req
 
     def post(self, query_path, data=None):
         req = self.post_raw(query_path, data)
         return req.json()
 
-    def put_raw(self, query_path, data=None):
+    def put_raw(self, query_path, data=None, **kwargs):
         if not query_path.startswith(r"/"):
             query_path = f"/{query_path}"
         url = f"{self.url}{query_path}"
-        req = requests.put(url, auth=self.auth, headers=self.headers, data=data)
+        req = requests.put(
+            url, auth=self.auth, headers=self.headers, data=data, **kwargs
+        )
         return req
 
-    def put(self, query_path, data=None):
+    def put(self, query_path, data=None, **kwargs):
         req = self.put_raw(query_path, data)
         return req.json()
 
-    def delete_raw(self, query_path):
+    def delete_raw(self, query_path, **kwargs):
         if not query_path.startswith(r"/"):
             query_path = f"/{query_path}"
         url = f"{self.url}{query_path}"
-        req = requests.delete(url, auth=self.auth, headers=self.headers)
+        req = requests.delete(url, auth=self.auth, headers=self.headers, **kwargs)
         return req
 
     def delete(self, query_path):
