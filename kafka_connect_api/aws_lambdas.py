@@ -7,6 +7,8 @@
 Module with functions that can be used as AWS Lambda Handlers to perform various tasks
 """
 
+import logging
+import sys
 from os import environ
 
 from jsonschema import validate
@@ -28,7 +30,7 @@ CLUSTER_CONFIG_SCHEMA = {
         "username": {"type": "string"},
         "password": {"type": "string"},
         "protocol": {"type": "string", "default": "http"},
-        "ignore_ssl_errors": {"type": "bool", "default": False},
+        "ignore_ssl_errors": {"type": "boolean", "default": False},
     },
 }
 
@@ -46,6 +48,28 @@ CONNECTOR_CONFIG_SCHEMA = {
         "config": {"type": "object"},
     },
 }
+
+
+def setup_logging():
+    """
+    In case this is used in a Lambda function, removes the AWS Lambda default log handler
+
+    :returns: the_logger
+    :rtype: Logger
+    """
+    formats = {
+        "INFO": logging.Formatter(
+            "[%(levelname)8s] %(message)s",
+            "%Y-%m-%d %H:%M:%S",
+        )
+    }
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    formatter = formats["INFO"]
+    for handler in root_logger.handlers:
+        handler.setFormatter(formatter)
+        root_logger.addHandler(handler)
+    return root_logger
 
 
 def config_from_env_vars():
@@ -105,12 +129,14 @@ def get_connector(event):
     :return: the connector
     :rtype: Connector
     """
+    log = setup_logging()
     connector_config = event["connector"]
     validate(connector_config, CONNECTOR_CONFIG_SCHEMA)
     name = connector_config["name"]
     cluster_config = set_cluster_config(event)
     api = Api(**cluster_config)
     cluster = Cluster(api)
+    log.info(cluster)
     if name not in cluster.connectors:
         raise KeyError(f"Connector {name} is not present in cluster {cluster}")
     return cluster.connectors[name]
@@ -123,12 +149,16 @@ def restart_all_connectors(event, context):
     :param dict event:
     :param dict context:
     """
+    log = setup_logging()
     cluster_config = set_cluster_config(event)
     api = Api(**cluster_config)
     cluster = Cluster(api)
-    print(cluster)
+    log.info(f"Restarting all connectors in {cluster}")
+    log.info(cluster)
     for connector in cluster.connectors.values():
+        log.info(f"Restarting {connector}")
         connector.cycle_connector()
+    return 0
 
 
 def create_update_connector(event, context):
@@ -138,6 +168,7 @@ def create_update_connector(event, context):
     :param dict event:
     :param dict context:
     """
+    log = setup_logging()
     if not KEYISSET("connector", event):
         raise KeyError("No configuration given for the connector to set/update")
     connector_config = event["connector"]
@@ -150,10 +181,13 @@ def create_update_connector(event, context):
     cluster_config = set_cluster_config(event)
     api = Api(**cluster_config)
     cluster = Cluster(api)
+    log.info(f"Attempt at creating/updating {name} in {cluster}")
     connector = Connector(api, name)
     connector.config = connector_config["config"]
     if name not in cluster.connectors:
+        log.error(f"Faield to create connector {name} in {cluster}")
         raise Exception(f"Failed to create connector {name}")
+    return 0
 
 
 def delete_connector(event, context):
@@ -163,8 +197,11 @@ def delete_connector(event, context):
     :param dict event:
     :param dict context:
     """
+    log = setup_logging()
     connector = get_connector(event)
+    log.info(f"Deleting connector {connector}")
     connector.delete()
+    return 0
 
 
 def restart_connector(event, context):
@@ -174,8 +211,13 @@ def restart_connector(event, context):
     :param dict event:
     :param dict context:
     """
+    log = setup_logging()
     connector = get_connector(event)
+    log.info(
+        f"Cycling connector {connector} through pause / restart all tasks / resume"
+    )
     connector.cycle_connector()
+    return 0
 
 
 def check_connector_health(event, context):
@@ -186,8 +228,13 @@ def check_connector_health(event, context):
     :param dict context:
     :return:
     """
+    log = setup_logging()
+    tasks_health = []
     connector = get_connector(event)
-    tasks_health = [task.is_running() for task in connector.tasks]
+    for task in connector.tasks:
+        log.info(f"Task {task.id} for connector {connector} state is {task.state}")
+        tasks_health.append(task.is_running())
     if all(tasks_health):
+        log.info(f"All tasks for connector {connector} are RUNNING")
         return True
     return False

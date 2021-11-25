@@ -97,24 +97,27 @@ conform	: ## Conform to a standard of coding syntax
 
 python39	:
 			docker run -u $(shell bash -c 'id -u'):$(shell bash -c 'id -u') \
-			--rm -v $(PWD):/opt/build --workdir /opt --entrypoint /bin/bash \
+			--rm -v $(PWD):/opt/build --workdir /opt/build --entrypoint /bin/bash \
 			public.ecr.aws/compose-x/python:3.9 \
-			-c "pip install --no-cache-dir /opt/build/dist/*.whl -t /opt/build/layer/lib/python/python3.9/site-packages/"
+			-c "set -ex; pip install --no-cache-dir /opt/build/dist/kafka_connect_api*.whl -t /opt/build/layer/lib/python3.9/site-packages/ -r req.txt"
 
 python38	:
 			docker run -u $(shell bash -c 'id -u'):$(shell bash -c 'id -u') \
 			--rm -v $(PWD):/opt/build --workdir /opt/build --entrypoint /bin/bash \
 			public.ecr.aws/compose-x/python:3.8 \
-			-c "pip install --no-cache-dir /opt/build/dist/*.whl -t /opt/build/layer/lib/python/python3.8/site-packages/"
+			-c "set -ex; pip install --no-cache-dir /opt/build/dist/kafka_connect_api*.whl -t /opt/build/layer/lib/python3.8/site-packages/ -r req.txt"
 
 
 layers		: dist
 			test -d layer && rm -rf layer || mkdir layer
+			poetry export -o req.txt --without-hashes -E awslambda
 			$(MAKE) python38
 			$(MAKE) python39
-			cleanpy -af --include-testing layer/lib/python/python3.8/site-packages/
-			cleanpy -af --include-testing layer/lib/python/python3.9/site-packages/
+			cleanpy -af --include-testing layer/lib/python3.8/site-packages/
+			cleanpy -af --include-testing layer/lib/python3.9/site-packages/
+			rm req.txt
 
-package		: layers
-			cd layer; mkdir python; mv * python ; zip -r9 ../layer.zip *
+package		: clean layers
+			test -f layer.zip && rm -v layer.zip || echo
+			cd layer; mkdir python; mv * python ; zip -q -r9 ../layer.zip *
 			$(MAKE) clean

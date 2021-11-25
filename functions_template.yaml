@@ -293,7 +293,7 @@ Resources:
       Runtime: python3.8
       InlineCode: |
         #!/usr/bin/env python
-        from kafka_connect_api.aws_lambdas import restart_connector as handler
+        from kafka_connect_api.aws_lambdas import check_connector_health as handler
 
         def lambda_handler(event, context):
             return handler(event, context)

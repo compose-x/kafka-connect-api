@@ -40,7 +40,7 @@ class Task(object):
         return self.status["state"]
 
     def is_running(self):
-        if self.status == "RUNNING":
+        if self.state == "RUNNING":
             return True
         return False
 
