@@ -180,7 +180,7 @@ class Api(object):
         """
         self.hostname = hostname
         self.protocol = protocol if protocol else "http"
-        self.ignore_ssl = ignore_ssl_errors
+        self.ignore_ssl = not ignore_ssl_errors
         self.port = port if port else 8083
         self.username = username
         self.password = password
@@ -219,7 +219,9 @@ class Api(object):
         if not query_path.startswith(r"/"):
             query_path = f"/{query_path}"
         url = f"{self.url}{query_path}"
-        req = requests.get(url, auth=self.auth, headers=self.headers, **kwargs)
+        req = requests.get(
+            url, auth=self.auth, headers=self.headers, verify=self.ignore_ssl, **kwargs
+        )
         return req
 
     def get(self, query_path):
@@ -231,7 +233,12 @@ class Api(object):
             query_path = f"/{query_path}"
         url = f"{self.url}{query_path}"
         req = requests.post(
-            url, auth=self.auth, headers=self.headers, data=data, **kwargs
+            url,
+            auth=self.auth,
+            headers=self.headers,
+            data=data,
+            verify=self.ignore_ssl,
+            **kwargs,
         )
         return req
 
@@ -244,7 +251,12 @@ class Api(object):
             query_path = f"/{query_path}"
         url = f"{self.url}{query_path}"
         req = requests.put(
-            url, auth=self.auth, headers=self.headers, data=data, **kwargs
+            url,
+            auth=self.auth,
+            headers=self.headers,
+            data=data,
+            verify=self.ignore_ssl,
+            **kwargs,
         )
         return req
 
@@ -256,7 +268,9 @@ class Api(object):
         if not query_path.startswith(r"/"):
             query_path = f"/{query_path}"
         url = f"{self.url}{query_path}"
-        req = requests.delete(url, auth=self.auth, headers=self.headers, **kwargs)
+        req = requests.delete(
+            url, auth=self.auth, headers=self.headers, verify=self.ignore_ssl, **kwargs
+        )
         return req
 
     def delete(self, query_path):
