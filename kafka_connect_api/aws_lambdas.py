@@ -27,12 +27,17 @@ CLUSTER_CONFIG_SCHEMA = {
     "properties": {
         "hostname": {"type": "string", "format": "idn-hostname"},
         "port": {"type": "number", "default": 8083},
+        "url": {
+            "type": "string",
+            "description": "The URL to use. Overrides hostname:port",
+        },
         "username": {"type": "string"},
         "password": {"type": "string"},
         "protocol": {"type": "string", "default": "http"},
         "ignore_ssl_errors": {"type": "boolean", "default": False},
     },
 }
+
 
 CONNECTOR_CONFIG_SCHEMA = {
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -83,6 +88,7 @@ def config_from_env_vars():
     return {
         "hostname": environ.get("CONNECT_CLUSTER_HOSTNAME", None),
         "port": int(environ.get("CONNECT_CLUSTER_PORT", 8083)),
+        "url": environ.get("CONNECT_CLUSTER_URL", None),
         "username": environ.get("CONNECT_CLUSTER_BASIC_AUTH_USERNAME", None),
         "password": environ.get("CONNECT_CLUSTER_BASIC_AUTH_PASSWORD", None),
         "protocol": environ.get("CONNECT_CLUSTER_PROTOCOL", "http"),

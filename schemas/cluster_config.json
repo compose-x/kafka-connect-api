@@ -16,6 +16,10 @@
       "type": "number",
       "default": 8083
     },
+    "url": {
+      "type": "string",
+      "description": "The URL to use. Overrides hostname:port"
+    },
     "username": {
       "type": "string"
     },

@@ -164,6 +164,7 @@ class Api(object):
         self,
         hostname,
         port=None,
+        url=None,
         protocol=None,
         ignore_ssl_errors=False,
         username=None,
@@ -194,7 +195,10 @@ class Api(object):
         if self.username and not self.password or self.password and not self.username:
             raise ValueError("You must specify both username and password")
 
-        if (self.port == 80 and protocol == "http") or (
+        if url:
+            self.url = url
+            print("URL Defined from parameter. Skipping hostname:port parameters")
+        elif (self.port == 80 and protocol == "http") or (
             self.port == 443 and self.protocol == "https"
         ):
             self.url = f"{self.protocol}://{self.hostname}"
