@@ -3,6 +3,7 @@
 # Copyright 2020-2021 John Mille <john@compose-x.io>
 
 """Main module."""
+import re
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -181,7 +182,7 @@ class Api(object):
         """
         self.hostname = hostname
         self.protocol = protocol if protocol else "http"
-        self.ignore_ssl = not ignore_ssl_errors
+        self.verify_ssl = not ignore_ssl_errors
         self.port = port if port else 8083
         self.username = username
         self.password = password
@@ -194,9 +195,14 @@ class Api(object):
             )
         if self.username and not self.password or self.password and not self.username:
             raise ValueError("You must specify both username and password")
-
+        if self.verify_ssl is True and self.protocol == "http":
+            print("No SSL needed for HTTP without TLS. Disabling")
+            self.verify_ssl = False
         if url:
             self.url = url
+            if not re.match(r"(http://|https://)", self.url):
+                print(f"URL Does not contain a protocol. Using default {self.protocol}")
+                self.url = f"{self.protocol}://{self.url}"
             print("URL Defined from parameter. Skipping hostname:port parameters")
         elif (self.port == 80 and protocol == "http") or (
             self.port == 443 and self.protocol == "https"
@@ -224,7 +230,7 @@ class Api(object):
             query_path = f"/{query_path}"
         url = f"{self.url}{query_path}"
         req = requests.get(
-            url, auth=self.auth, headers=self.headers, verify=self.ignore_ssl, **kwargs
+            url, auth=self.auth, headers=self.headers, verify=self.verify_ssl, **kwargs
         )
         return req
 
@@ -241,7 +247,7 @@ class Api(object):
             auth=self.auth,
             headers=self.headers,
             data=data,
-            verify=self.ignore_ssl,
+            verify=self.verify_ssl,
             **kwargs,
         )
         return req
@@ -259,7 +265,7 @@ class Api(object):
             auth=self.auth,
             headers=self.headers,
             data=data,
-            verify=self.ignore_ssl,
+            verify=self.verify_ssl,
             **kwargs,
         )
         return req
@@ -273,7 +279,7 @@ class Api(object):
             query_path = f"/{query_path}"
         url = f"{self.url}{query_path}"
         req = requests.delete(
-            url, auth=self.auth, headers=self.headers, verify=self.ignore_ssl, **kwargs
+            url, auth=self.auth, headers=self.headers, verify=self.verify_ssl, **kwargs
         )
         return req
 
