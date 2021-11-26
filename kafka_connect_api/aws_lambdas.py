@@ -83,8 +83,10 @@ def config_from_env_vars():
     :return: the cluster configuration
     :rtype: dict
     """
-    if environ.get("CONNECT_CLUSTER_HOSTNAME", None) is None:
-        raise LookupError("CONNECT_CLUSTER_HOSTNAME is not set.")
+    if environ.get("CONNECT_CLUSTER_HOSTNAME", None) is None and environ.get(
+        "CONNECT_CLUSTER_URL", None
+    ):
+        raise LookupError("CONNECT_CLUSTER_HOSTNAME nor CONNECT_CLUSTER_URL are set.")
     return {
         "hostname": environ.get("CONNECT_CLUSTER_HOSTNAME", None),
         "port": int(environ.get("CONNECT_CLUSTER_PORT", 8083)),
