@@ -10,6 +10,7 @@ Module with functions that can be used as AWS Lambda Handlers to perform various
 import logging
 import sys
 from os import environ
+from time import sleep
 
 from jsonschema import validate
 
@@ -193,8 +194,10 @@ def create_update_connector(event, context):
     log.info(f"Attempt at creating/updating {name} in {cluster}")
     connector = Connector(api, name)
     connector.config = connector_config["config"]
+    log.info(f"{connector.name} - waiting 5s before checking")
+    sleep(5)
     if name not in cluster.connectors:
-        log.error(f"Faield to create connector {name} in {cluster}")
+        log.error(f"Failed to create connector {name} in {cluster}")
         raise Exception(f"Failed to create connector {name}")
     return 0
 

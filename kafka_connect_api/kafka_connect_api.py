@@ -107,7 +107,9 @@ class Connector(object):
 
     @config.setter
     def config(self, config):
-        self._api.put(f"/connectors/{self.name}/config", json=config)
+        _req = self._api.put_raw(f"/connectors/{self.name}/config", json=config)
+        if not (199 < _req.status_code < 300):
+            print(_req.text)
 
     @property
     def status(self):
@@ -238,7 +240,7 @@ class Api(object):
         req = self.get_raw(query_path)
         return req.json()
 
-    def post_raw(self, query_path, data=None, **kwargs):
+    def post_raw(self, query_path, **kwargs):
         if not query_path.startswith(r"/"):
             query_path = f"/{query_path}"
         url = f"{self.url}{query_path}"
@@ -246,17 +248,16 @@ class Api(object):
             url,
             auth=self.auth,
             headers=self.headers,
-            data=data,
             verify=self.verify_ssl,
             **kwargs,
         )
         return req
 
-    def post(self, query_path, data=None):
-        req = self.post_raw(query_path, data)
+    def post(self, query_path, **kwargs):
+        req = self.post_raw(query_path, **kwargs)
         return req.json()
 
-    def put_raw(self, query_path, data=None, **kwargs):
+    def put_raw(self, query_path, **kwargs):
         if not query_path.startswith(r"/"):
             query_path = f"/{query_path}"
         url = f"{self.url}{query_path}"
@@ -264,14 +265,13 @@ class Api(object):
             url,
             auth=self.auth,
             headers=self.headers,
-            data=data,
             verify=self.verify_ssl,
             **kwargs,
         )
         return req
 
-    def put(self, query_path, data=None, **kwargs):
-        req = self.put_raw(query_path, data=data)
+    def put(self, query_path, **kwargs):
+        req = self.put_raw(query_path, **kwargs)
         return req.json()
 
     def delete_raw(self, query_path, **kwargs):
