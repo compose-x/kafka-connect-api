@@ -107,7 +107,7 @@ class Connector(object):
 
     @config.setter
     def config(self, config):
-        self._api.put(f"/connectors/{self.name}/config", data=config)
+        self._api.put(f"/connectors/{self.name}/config", json=config)
 
     @property
     def status(self):
@@ -271,7 +271,7 @@ class Api(object):
         return req
 
     def put(self, query_path, data=None, **kwargs):
-        req = self.put_raw(query_path, data)
+        req = self.put_raw(query_path, data=data)
         return req.json()
 
     def delete_raw(self, query_path, **kwargs):
