@@ -1,5 +1,3 @@
-#  -*- coding: utf-8 -*-
-
 """Top-level package for Apache Kafka Connect API."""
 
 __author__ = """John Preston"""

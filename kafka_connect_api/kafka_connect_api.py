@@ -1,6 +1,5 @@
-#  -*- coding: utf-8 -*-
 # SPDX-License-Identifier: MPL-2.0
-# Copyright 2020-2021 John Mille <john@compose-x.io>
+# Copyright 2020-2022 John Mille <john@compose-x.io>
 
 """Main module."""
 import re
@@ -9,7 +8,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 
-class Task(object):
+class Task:
     """
     Class to represent a Connector Task
     """
@@ -51,7 +50,7 @@ class Task(object):
         )
 
 
-class Connector(object):
+class Connector:
     """
     Class to represent a Connector
     """
@@ -131,7 +130,7 @@ class Connector(object):
         return _tasks
 
 
-class Cluster(object):
+class Cluster:
     def __init__(self, api):
         self._api = api
 
@@ -158,7 +157,7 @@ class Cluster(object):
         return f"{self._api.url} - {self.version} - {self.kafka_cluster}"
 
 
-class Api(object):
+class Api:
     """
     Class to represent the Connect cluster
     """
@@ -191,7 +190,7 @@ class Api(object):
 
         if self.protocol not in ["http", "https"]:
             raise ValueError("protocol must be one of", ["http", "https"])
-        if (self.port < 0) or (self.port > (2 ** 16)):
+        if (self.port < 0) or (self.port > (2**16)):
             raise ValueError(
                 f"Port {self.port} is not valid. Must be between 0 and {((2 ** 16) - 1)}"
             )
