@@ -1,4 +1,4 @@
-.PHONY: clean clean-test clean-pyc clean-build docs help
+.PHONY: clean clean-test clean-pyc clean-build docs help correct-owner python38 python39 layers package
 .DEFAULT_GOAL := help
 
 define BROWSER_PYSCRIPT
@@ -96,16 +96,20 @@ conform	: ## Conform to a standard of coding syntax
 	find kafka_connect_api -name "*.json" -type f  -exec sed -i '1s/^\xEF\xBB\xBF//' {} +
 
 python39	:
-			docker run -u $(shell bash -c 'id -u'):$(shell bash -c 'id -u') \
-			--rm -v $(PWD):/opt/build --workdir /opt/build --entrypoint /bin/bash \
-			public.ecr.aws/compose-x/python:3.9 \
-			-c "set -ex; pip install --no-cache-dir /opt/build/dist/kafka_connect_api*.whl -t /opt/build/layer/lib/python3.9/site-packages/ -r req.txt"
+			docker run \
+			--rm -v $(PWD):/build --workdir /build --entrypoint /bin/bash \
+			public.ecr.aws/lambda/python:3.9 \
+			-c "set -ex; pip install pip -U; pip install --no-cache-dir /build/dist/kafka_connect_api*.whl -t /build/layer/lib/python3.9/site-packages/ -r req.txt"
 
 python38	:
-			docker run -u $(shell bash -c 'id -u'):$(shell bash -c 'id -u') \
-			--rm -v $(PWD):/opt/build --workdir /opt/build --entrypoint /bin/bash \
-			public.ecr.aws/compose-x/python:3.8 \
-			-c "set -ex; pip install --no-cache-dir /opt/build/dist/kafka_connect_api*.whl -t /opt/build/layer/lib/python3.8/site-packages/ -r req.txt"
+			docker run \
+			--rm -v $(PWD):/build --workdir /build --entrypoint /bin/bash \
+			public.ecr.aws/lambda/python:3.8 \
+			-c "set -ex; pip install pip -U; pip install --no-cache-dir /build/dist/kafka_connect_api*.whl -t /build/layer/lib/python3.8/site-packages/ -r req.txt"
+
+correct-owner:
+			docker run --rm -it -v $(PWD)/layer:/layer public.ecr.aws/amazonlinux/amazonlinux:latest \
+			/bin/bash -c "chown -R $(shell bash -c 'id -u'):$(shell bash -c 'id -u') /layer"
 
 
 layers		: dist
@@ -113,6 +117,7 @@ layers		: dist
 			poetry export -o req.txt --without-hashes -E awslambda
 			$(MAKE) python38
 			$(MAKE) python39
+			$(MAKE) correct-owner
 			cleanpy -af --include-testing layer/lib/python3.8/site-packages/
 			cleanpy -af --include-testing layer/lib/python3.9/site-packages/
 			rm req.txt
