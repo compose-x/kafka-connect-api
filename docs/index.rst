@@ -84,15 +84,6 @@ In a virtual environment
     :target: https://pypi.org/project/kafka-connect-api/
 
 
-.. include:: modules_syntax.rst
-
-
-.. toctree::
-    :titlesonly:
-    :caption: Additional content
-
-    changelog
-
 .. toctree::
     :titlesonly:
     :maxdepth: 1
@@ -100,6 +91,12 @@ In a virtual environment
 
     modules
     contributing
+
+.. toctree::
+    :titlesonly:
+    :caption: Additional content
+
+    changelog
 
 Indices and tables
 ==================
