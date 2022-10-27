@@ -7,7 +7,6 @@
 
 # FuelPHP
 /fuel/vendor
-/docs/
 /fuel/app/logs/*/*/*
 /fuel/app/cache/*/*
 
@@ -209,7 +208,6 @@ public_html/hot
 /*.Rcheck/
 *_cache/
 /cache/
-docs/
 po/*~
 
 # Processing
@@ -1051,9 +1049,6 @@ parts/
 dist/
 var/
 
-# D
-docs/
-
 # CFWheels
 plugins/**/*
 files
@@ -1547,3 +1542,4 @@ build/
 *~
 /layer.zip
 /layer/
+docs/kafka_connect_api.rst
