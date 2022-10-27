@@ -41,7 +41,7 @@ In a virtual environment
 
 
 
-.. |DOCS_BUILD| image:: https://readthedocs.org/projects/ecs-composex/badge/?version=latest
+.. |DOCS_BUILD| image:: https://readthedocs.org/projects/kafka-connect-api/badge/?version=latest
         :target: https://kafka-connect-api.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
