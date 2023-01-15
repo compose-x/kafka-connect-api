@@ -1,6 +1,6 @@
-========================
-Apache Kafka Connect API
-========================
+========================================
+Apache Kafka Connect API Python client
+========================================
 
 |PYPI_VERSION| |PYPI_LICENSE|
 
@@ -8,16 +8,30 @@ Apache Kafka Connect API
 
 |DOCS_BUILD|
 
+Documentation: https://kafka-connect-api.readthedocs.io.
 
-Python Kafka Connect API client
 
+Install
+========
 
-* Free software: MPL2.0
-* Documentation: https://kafka-connect-api.readthedocs.io.
+.. code-block::
+
+    pip install kafka-connect-api
+
+Usage
+======
+
+.. code-block:: python
+
+    from kafka_connect_api.kafka_connect_api import Api, Cluster
+
+    api = Api(connect.cluster, port=8083)
+    cluster = Cluster(api)
+    print(cluster.connectors)
 
 
 Features
---------
+==========
 
 Allows you to interact with the Kafka Connect API (`API Reference`_) in a simple way.
 
@@ -28,6 +42,8 @@ Allows you to interact with the Kafka Connect API (`API Reference`_) in a simple
 * Pause / Resume Connector
 * Restart all tasks for the connector
 
+Some pre-made functions can help with operational activities.
+See `kafka_connect_api.aws_lambdas.py`
 
 .. _API Reference: https://docs.confluent.io/platform/current/connect/references/restapi.html
 

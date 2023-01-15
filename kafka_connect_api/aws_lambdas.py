@@ -7,7 +7,6 @@ Module with functions that can be used as AWS Lambda Handlers to perform various
 """
 
 import logging
-import sys
 from os import environ
 from time import sleep
 

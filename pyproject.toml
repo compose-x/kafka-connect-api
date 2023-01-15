@@ -5,9 +5,10 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "kafka_connect_api"
 version = "0.4.0.post0"
-description = "Python Client to interact with Apache Kafka Connect cluster"
+description = "Apache Kafka Connect client"
 authors = ["John Preston <john@compose-x.io>"]
 license = "MPL-2.0"
+readme = "README.rst"
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -21,11 +22,10 @@ pre-commit = "^2.16"
 black = "^22.10"
 sphinx-material = "^0.0.35"
 behave = "^1.2"
-coverage = { extras = ["toml"], version = "^6.0" }
+coverage = { extras = ["toml"], version = "^7.0" }
 pytest = "^7.2"
-Sphinx = "^5.3"
-tox = "^3.24.4"
-tbump = "6.9.0"
+Sphinx = "^6.0"
+tbump = "^6.9"
 sphinx-jsonschema = "^1.17"
 cleanpy = "^0.3"
 pyupgrade = "^3.1"

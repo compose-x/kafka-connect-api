@@ -2,10 +2,20 @@
 # Copyright 2020-2022 John Mille <john@compose-x.io>
 
 """Main module."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from requests import Response
+
 import re
 
-import requests
+from requests import delete, get, post, put
 from requests.auth import HTTPBasicAuth
+
+from .errors import evaluate_api_return
 
 
 class Task:
@@ -13,12 +23,9 @@ class Task:
     Class to represent a Connector Task
     """
 
-    def __init__(self, api, connector, task_id, task_config):
+    def __init__(self, api: Api, connector: Connector, task_id: int, task_config: dict):
         """
-
-        :param Api api:
-        :param Connector connector:
-        :param int task_id:
+        Initializes the Task for a given connector
         """
         self.id = task_id
         self._connector = connector
@@ -52,52 +59,53 @@ class Task:
 
 class Connector:
     """
-    Class to represent a Connector
+    Class to represent a Connector.
+
+    Configuration & Tasks are retrieved live from the connect cluster, never cached, to ensure there is no
+    conflict or out of date settings.
     """
 
-    def __init__(self, api, name, config=None):
-        """
-
-        :param Api api:
-        :param str name:
-        :param dict config:
-        """
+    def __init__(self, api: Api, name: str):
         self._api = api
         self.name = name
 
     def __repr__(self):
         return self.name
 
-    def exists(self):
+    def exists(self) -> bool:
         req = self._api.get_raw(f"/connectors/{self.name}/")
         if req.status_code == 404:
             return False
         return True
 
-    def restart(self):
+    def restart(self) -> None:
         self._api.post(f"/connectors/{self.name}/restart")
 
-    def pause(self):
+    def pause(self) -> None:
         self._api.put_raw(f"/connectors/{self.name}/pause")
 
-    def resume(self):
+    def resume(self) -> None:
         self._api.put_raw(f"/connectors/{self.name}/resume")
 
-    def restart_all_tasks(self):
+    def restart_all_tasks(self) -> None:
         for _task in self.tasks:
             _task.restart()
 
-    def delete(self):
+    def delete(self) -> None:
         self._api.delete_raw(f"/connectors/{self.name}")
 
-    def cycle_connector(self):
+    def cycle_connector(self) -> None:
         self.pause()
         self.restart_all_tasks()
         self.resume()
 
     @property
+    def status(self) -> dict:
+        return self._api.get(f"/connectors/{self.name}/status")
+
+    @property
     def state(self):
-        return self.status()["connector"]["state"]
+        return self.status["connector"]["state"]
 
     @property
     def config(self):
@@ -105,14 +113,16 @@ class Connector:
         return _config["config"]
 
     @config.setter
-    def config(self, config):
+    def config(self, config: dict) -> None:
+        if not isinstance(config, dict):
+            raise TypeError(
+                self.name,
+                "connect configuration must be a dictionary/mapping. Got",
+                type(config),
+            )
         _req = self._api.put_raw(f"/connectors/{self.name}/config", json=config)
         if not (199 < _req.status_code < 300):
             print(_req.text)
-
-    @property
-    def status(self):
-        return self._api.get(f"/connectors/{self.name}/status")
 
     @property
     def tasks(self):
@@ -131,7 +141,15 @@ class Connector:
 
 
 class Cluster:
-    def __init__(self, api):
+
+    """
+    Class to represent the cluster at the top level.
+
+    Configurations & Connectors are retrieved "live" from the API, not stored in memory,
+    to avoid conflicts/out of date settings.
+    """
+
+    def __init__(self, api: Api):
         self._api = api
 
     def get(self):
@@ -142,13 +160,13 @@ class Cluster:
         return self.get()["version"]
 
     @property
-    def kafka_cluster(self):
+    def kafka_cluster(self) -> str:
         return self.get()["kafka_cluster_id"]
 
     @property
-    def connectors(self):
+    def connectors(self) -> dict:
         _connectors = self._api.get("/connectors")
-        _cluster_connectors = {}
+        _cluster_connectors: dict = {}
         for connector in _connectors:
             _cluster_connectors[connector] = Connector(self._api, connector)
         return _cluster_connectors
@@ -159,7 +177,7 @@ class Cluster:
 
 class Api:
     """
-    Class to represent the Connect cluster
+    API Calls handler. Used by the Connect cluster to wrap connect API calls.
     """
 
     def __init__(
@@ -226,11 +244,12 @@ class Api:
     def __repr__(self):
         return self.url
 
-    def get_raw(self, query_path, **kwargs):
+    @evaluate_api_return
+    def get_raw(self, query_path, **kwargs) -> Response:
         if not query_path.startswith(r"/"):
             query_path = f"/{query_path}"
         url = f"{self.url}{query_path}"
-        req = requests.get(
+        req = get(
             url, auth=self.auth, headers=self.headers, verify=self.verify_ssl, **kwargs
         )
         return req
@@ -239,11 +258,12 @@ class Api:
         req = self.get_raw(query_path)
         return req.json()
 
-    def post_raw(self, query_path, **kwargs):
+    @evaluate_api_return
+    def post_raw(self, query_path, **kwargs) -> Response:
         if not query_path.startswith(r"/"):
             query_path = f"/{query_path}"
         url = f"{self.url}{query_path}"
-        req = requests.post(
+        req = post(
             url,
             auth=self.auth,
             headers=self.headers,
@@ -256,11 +276,12 @@ class Api:
         req = self.post_raw(query_path, **kwargs)
         return req.json()
 
-    def put_raw(self, query_path, **kwargs):
+    @evaluate_api_return
+    def put_raw(self, query_path, **kwargs) -> Response:
         if not query_path.startswith(r"/"):
             query_path = f"/{query_path}"
         url = f"{self.url}{query_path}"
-        req = requests.put(
+        req = put(
             url,
             auth=self.auth,
             headers=self.headers,
@@ -273,11 +294,12 @@ class Api:
         req = self.put_raw(query_path, **kwargs)
         return req.json()
 
-    def delete_raw(self, query_path, **kwargs):
+    @evaluate_api_return
+    def delete_raw(self, query_path, **kwargs) -> Response:
         if not query_path.startswith(r"/"):
             query_path = f"/{query_path}"
         url = f"{self.url}{query_path}"
-        req = requests.delete(
+        req = delete(
             url, auth=self.auth, headers=self.headers, verify=self.verify_ssl, **kwargs
         )
         return req

@@ -4,40 +4,30 @@
     :keywords: Kafka, Connect, Python, SDK
 
 ##########################################
-Kafka Connect API
+Kafka Connect API Client for Python
 ##########################################
 
 |PYPI_VERSION| |PYPI_LICENSE|
 
 |CODE_STYLE| |TDD| |BDD|
 
-
 Install
 ========
-
-On your system
----------------
 
 .. code-block::
 
     pip install kafka-connect-api
 
-For your local user
---------------------
+Usage
+======
 
-.. code-block::
+.. code-block:: python
 
-    pip install kafka-connect-api --user
+    from kafka_connect_api.kafka_connect_api import Api, Cluster
 
-In a virtual environment
--------------------------
-
-.. code-block::
-
-    python3 -m venv venv
-    source venv/bin/activate
-    pip install pip -U;
-    pip install kafka-conect-api
+    api = Api(connect.cluster, port=8083)
+    cluster = Cluster(api)
+    print(cluster.connectors)
 
 
 
@@ -89,8 +79,9 @@ In a virtual environment
     :maxdepth: 1
     :caption: Modules and Source Code
 
-    modules
+    install
     contributing
+    modules
 
 .. toctree::
     :titlesonly:
@@ -105,29 +96,5 @@ Indices and tables
 * :ref:`search`
 
 
-.. meta::
-    :description: ECS Compose-X
-    :keywords: AWS, AWS ECS, Docker, Containers, Compose, docker-compose
-
-
-Credits
-=======
-
-This package would not have been possible without the amazing job done by the AWS CloudFormation team!
-This package would not have been possible without the amazing community around `Troposphere`_!
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
-.. _`Mark Peek`: https://github.com/markpeek
-.. _`AWS ECS CLI`: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI.html
-.. _Troposphere: https://github.com/cloudtools/troposphere
 .. _Blog: https://blog.compose-x.io/
-.. _Docker Compose: https://docs.docker.com/compose/
 .. _ECS Compose-X: https://github.com/compose-x/ecs_composex
-.. _YAML Specifications: https://yaml.org/spec/
-.. _Extensions fields:  https://docs.docker.com/compose/compose-file/#extension-fields
-.. _ECS Compose-X Project: https://github.com/orgs/lambda-my-aws/projects/3
-.. _CICD Pipeline for multiple services on AWS ECS with ECS Compose-X: https://blog.ecs-composex.lambda-my-aws.io/posts/cicd-pipeline-for-multiple-services-on-aws-ecs-with-ecs-composex/
-.. _the compatibilty matrix: https://nightly.docs.compose-x.io/compatibility/docker_compose.html
-.. _Find out how to use ECS Compose-X in AWS here: https://blog.compose-x.io/posts/use-your-docker-compose-files-as-a-cloudformation-template/index.html
