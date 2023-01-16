@@ -13,8 +13,7 @@ from time import sleep
 from jsonschema import validate
 
 from .kafka_connect_api import Api, Cluster, Connector
-
-KEYISSET = lambda x, y: isinstance(y, dict) and x in y.keys() and y[x]
+from .tools import KEYISSET
 
 CLUSTER_CONFIG_SCHEMA = {
     "$schema": "http://json-schema.org/draft-07/schema#",

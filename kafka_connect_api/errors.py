@@ -1,7 +1,7 @@
 #  SPDX-License-Identifier: MPL-2.0
 #  Copyright 2020-2022 John Mille <john@compose-x.io>
 
-from .aws_lambdas import KEYISSET
+from .tools import KEYISSET
 
 
 class ConnectGenericException(Exception):
