@@ -17,6 +17,8 @@ from requests.auth import HTTPBasicAuth
 
 from .errors import evaluate_api_return
 
+LOG_LEVELS = ["INFO", "DEBUG", "TRACE", "WARN", "ERROR", "CRITICAL"]
+
 
 class Task:
     """
@@ -170,6 +172,31 @@ class Cluster:
         for connector in _connectors:
             _cluster_connectors[connector] = Connector(self._api, connector)
         return _cluster_connectors
+
+    @property
+    def loggers(self) -> dict:
+        return self._api.get("/admin/loggers")
+
+    @property
+    def root_logger(self):
+        return self.loggers["root"]
+
+    @root_logger.setter
+    def root_logger(self, log_level: str) -> None:
+        if log_level not in LOG_LEVELS:
+            raise ValueError(log_level, "not valid. Must be one of", LOG_LEVELS)
+        self._api.put("/admin/loggers/root", json={"level": log_level})
+
+    def set_logger_log_level(self, logger_name: str, log_level: str) -> dict:
+        if log_level not in LOG_LEVELS:
+            raise ValueError(log_level, "not valid. Must be one of", LOG_LEVELS)
+        if logger_name not in self.loggers.keys():
+            raise ValueError(
+                logger_name,
+                "Logger not found on the cluster. Valid loggers",
+                list(self.loggers.keys()),
+            )
+        return self._api.put(f"/admin/loggers/{logger_name}", json={"level": log_level})
 
     def __repr__(self):
         return f"{self._api.url} - {self.version} - {self.kafka_cluster}"
