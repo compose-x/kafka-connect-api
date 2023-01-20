@@ -25,21 +25,28 @@ class Task:
     Class to represent a Connector Task
     """
 
-    def __init__(self, api: Api, connector: Connector, task_id: int, task_config: dict):
+    def __init__(self, connector: Connector, task_id: int, task_config: dict):
         """
         Initializes the Task for a given connector
         """
         self.id = task_id
         self._connector = connector
-        self._api = api
         self.config = task_config
 
     def __repr__(self):
         return f"{self._connector.name}.{self.id}"
 
     @property
+    def api(self) -> Api:
+        return self._connector.api
+
+    @property
+    def connector(self) -> Connector:
+        return self._connector
+
+    @property
     def status(self):
-        _query = self._api.get(
+        _query = self.api.get(
             f"/connectors/{self._connector.name}/tasks/{self.id}/status"
         )
         return _query
@@ -54,7 +61,7 @@ class Task:
         return False
 
     def restart(self):
-        _query = self._api.post_raw(
+        _query = self.api.post_raw(
             f"/connectors/{self._connector.name}/tasks/{self.id}/restart"
         )
 
@@ -67,34 +74,42 @@ class Connector:
     conflict or out of date settings.
     """
 
-    def __init__(self, api: Api, name: str):
-        self._api = api
+    def __init__(self, cluster: Cluster, name: str):
+        self._cluster = cluster
         self.name = name
+
+    @property
+    def api(self) -> Api:
+        return self._cluster.api
+
+    @property
+    def cluster(self) -> Cluster:
+        return self._cluster
 
     def __repr__(self):
         return self.name
 
     def exists(self) -> bool:
-        req = self._api.get_raw(f"/connectors/{self.name}/")
+        req = self.api.get_raw(f"/connectors/{self.name}/")
         if req.status_code == 404:
             return False
         return True
 
     def restart(self) -> None:
-        self._api.post(f"/connectors/{self.name}/restart")
+        self.api.post(f"/connectors/{self.name}/restart")
 
     def pause(self) -> None:
-        self._api.put_raw(f"/connectors/{self.name}/pause")
+        self.api.put_raw(f"/connectors/{self.name}/pause")
 
     def resume(self) -> None:
-        self._api.put_raw(f"/connectors/{self.name}/resume")
+        self.api.put_raw(f"/connectors/{self.name}/resume")
 
     def restart_all_tasks(self) -> None:
         for _task in self.tasks:
             _task.restart()
 
     def delete(self) -> None:
-        self._api.delete_raw(f"/connectors/{self.name}")
+        self.api.delete_raw(f"/connectors/{self.name}")
 
     def cycle_connector(self) -> None:
         self.pause()
@@ -103,7 +118,7 @@ class Connector:
 
     @property
     def status(self) -> dict:
-        return self._api.get(f"/connectors/{self.name}/status")
+        return self.api.get(f"/connectors/{self.name}/status")
 
     @property
     def state(self):
@@ -111,7 +126,7 @@ class Connector:
 
     @property
     def config(self):
-        _config = self._api.get(f"/connectors/{self.name}")
+        _config = self.api.get(f"/connectors/{self.name}")
         return _config["config"]
 
     @config.setter
@@ -122,18 +137,17 @@ class Connector:
                 "connect configuration must be a dictionary/mapping. Got",
                 type(config),
             )
-        _req = self._api.put_raw(f"/connectors/{self.name}/config", json=config)
+        _req = self.api.put_raw(f"/connectors/{self.name}/config", json=config)
         if not (199 < _req.status_code < 300):
             print(_req.text)
 
     @property
     def tasks(self):
         _tasks = []
-        _connector_tasks = self._api.get(f"/connectors/{self.name}/tasks")
+        _connector_tasks = self.api.get(f"/connectors/{self.name}/tasks")
         for _task in _connector_tasks:
             _tasks.append(
                 Task(
-                    self._api,
                     self,
                     task_id=int(_task["id"]["task"]),
                     task_config=_task["config"],
@@ -158,6 +172,10 @@ class Cluster:
         return self._api.get("/")
 
     @property
+    def api(self) -> Api:
+        return self._api
+
+    @property
     def version(self):
         return self.get()["version"]
 
@@ -170,7 +188,7 @@ class Cluster:
         _connectors = self._api.get("/connectors")
         _cluster_connectors: dict = {}
         for connector in _connectors:
-            _cluster_connectors[connector] = Connector(self._api, connector)
+            _cluster_connectors[connector] = Connector(self, connector)
         return _cluster_connectors
 
     @property
