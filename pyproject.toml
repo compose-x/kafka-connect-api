@@ -18,16 +18,16 @@ jsonschema = "^4.3.0"
 [tool.poetry.dev-dependencies]
 isort = "^5.10.1"
 placebo = "^0.10"
-pre-commit = "^2.16"
-black = "^22.10"
+pre-commit = "^3.1"
+black = "^23.0"
 sphinx-material = "^0.0.35"
 behave = "^1.2"
-coverage = { extras = ["toml"], version = "^7.0" }
+coverage = { extras = ["toml"], version = "^7.2" }
 pytest = "^7.2"
 Sphinx = "^6.0"
 tbump = "^6.9"
 sphinx-jsonschema = "^1.17"
-cleanpy = "^0.3"
+cleanpy = "^0.4"
 pyupgrade = "^3.1"
 
 [tool.poetry.extras]
