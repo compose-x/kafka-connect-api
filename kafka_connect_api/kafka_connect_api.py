@@ -86,6 +86,10 @@ class Connector:
     def cluster(self) -> Cluster:
         return self._cluster
 
+    @property
+    def connector_class(self) -> str:
+        return self.config["connector.class"]
+
     def __repr__(self):
         return self.name
 

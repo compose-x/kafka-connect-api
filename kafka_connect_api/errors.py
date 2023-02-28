@@ -1,6 +1,8 @@
 #  SPDX-License-Identifier: MPL-2.0
 #  Copyright 2020-2022 John Mille <john@compose-x.io>
 
+from requests import exceptions as req_exceptions
+
 from .tools import KEYISSET
 
 
@@ -83,15 +85,19 @@ def evaluate_api_return(function):
         """
         Decorator wrapper
         """
-        payload = function(*args, **kwargs)
-        if payload.status_code not in [200, 201, 202, 204] and not KEYISSET(
-            "ignore_failure", kwargs
-        ):
-            details = payload.json()
-            raise ConnectApiException(payload.status_code, details)
+        try:
+            payload = function(*args, **kwargs)
+            if payload.status_code not in [200, 201, 202, 204] and not KEYISSET(
+                "ignore_failure", kwargs
+            ):
+                details = payload.json()
+                raise ConnectApiException(payload.status_code, details)
 
-        elif KEYISSET("ignore_failure", kwargs):
+            elif KEYISSET("ignore_failure", kwargs):
+                return payload
             return payload
-        return payload
+        except req_exceptions.RequestException as error:
+            print(error)
+            raise
 
     return wrapped_answer
