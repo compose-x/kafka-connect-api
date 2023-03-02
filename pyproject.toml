@@ -9,6 +9,17 @@ description = "Apache Kafka Connect client"
 authors = ["John Preston <john@compose-x.io>"]
 license = "MPL-2.0"
 readme = "README.rst"
+classifiers = [
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+    "Development Status :: 4 - Beta",
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -79,9 +90,9 @@ known_first_party = "kelvin"
 
 [tool.coverage.report]
 exclude_lines = [
-  "if __name__ == '__main__'"
+    "if __name__ == '__main__'"
 ]
 [tool.coverage.run]
 omit = [
-  "*/cli.py"
+    "*/cli.py"
 ]
