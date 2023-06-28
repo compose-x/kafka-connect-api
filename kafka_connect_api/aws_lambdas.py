@@ -189,7 +189,7 @@ def create_update_connector(event, context):
     api = Api(**cluster_config)
     cluster = Cluster(api)
     log.info(f"Attempt at creating/updating {name} in {cluster}")
-    connector = Connector(api, name)
+    connector = Connector(cluster, name)
     connector.config = connector_config["config"]
     log.info(f"{connector.name} - waiting 5s before checking")
     sleep(5)
