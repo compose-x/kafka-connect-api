@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "kafka_connect_api"
-version = "0.5.7"
+version = "0.5.8"
 description = "Apache Kafka Connect client"
 authors = ["John Preston <john@compose-x.io>"]
 license = "MPL-2.0"
@@ -52,7 +52,7 @@ sphinx-autodoc-typehints = "^1.19.4"
 github_url = "https://github.com/compose-x/kafka_connect_api"
 
 [tool.tbump.version]
-current = "0.5.7"
+current = "0.5.8"
 
 regex = '''
   (?P<major>\d+)
