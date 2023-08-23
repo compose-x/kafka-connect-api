@@ -384,7 +384,10 @@ class Api:
 
     def post(self, query_path, **kwargs):
         req = self.post_raw(query_path, **kwargs)
-        return req.json()
+        try:
+            return req.json()
+        except ValueError:
+            return req
 
     @evaluate_api_return
     def put_raw(self, query_path, **kwargs) -> Response:
