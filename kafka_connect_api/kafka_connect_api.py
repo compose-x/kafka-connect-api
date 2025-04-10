@@ -161,7 +161,6 @@ class Connector:
 
 
 class Cluster:
-
     """
     Class to represent the cluster at the top level.
 
